@@ -1,0 +1,25 @@
+{:paths ["src" "resources"]
+ ;:jvm-opts "--add-opens java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED"
+ :mvn/local-repo "./m2"
+ :mvn/repos {"central" {:url "https://repo1.maven.org/maven2/"}
+             "clojars" {:url "https://repo.clojars.org/"}}
+ :deps {org.clojure/clojure {:mvn/version "1.12.0"}
+        org.clojure/tools.logging {:mvn/version "1.3.0"}
+        com.github.seancorfield/next.jdbc {:mvn/version "1.3.994"}
+        org.duckdb/duckdb_jdbc {:mvn/version "1.1.3"}
+        org.babashka/cli {:mvn/version "0.8.62"}
+        edu.harvard.hms.dbmi.avillach.hpds/etl {:mvn/version "1.0-SNAPSHOT"}}
+ :aliases {:repl {:extra-deps {nrepl/nrepl {:mvn/version "1.1.0"}
+                               cider/cider-nrepl {:mvn/version "0.48.0"}}
+                  :jvm-opts  ["-Dgic.tools.repl=true"]
+                  :main-opts ["-m" "nrepl.cmdline"
+                              "--bind" "0.0.0.0"
+                              "--port" "8888"
+                              "--middleware" "[cider.nrepl/cider-middleware]"
+                              "-i"]}
+           :cli {:jvm-opts ["-Dlogback.configurationFile=/Users/idas/git/i2/pic-sure-extras/logback.xml" "-Xmx6g"]
+                 :main-opts ["-m" "gic.tools.core"]}
+           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.3" :git/sha "15ead66"}}
+                   :ns-default build}}}
+
+;         techascent/tech.ml.dataset {:mvn/version "7.021"}
