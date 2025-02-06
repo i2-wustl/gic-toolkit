@@ -78,7 +78,7 @@
      (println subcmd-help-string))))
 
 (def global-options {:debug {:coerce :boolean
-                             :desc   "enable additional debug logging"
+                             :desc   "Enable additional debug logging"
                              :default false}})
 
 (def subcommands 
