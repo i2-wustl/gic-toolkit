@@ -21,12 +21,7 @@
 
 (defn display-subcommand-options [subcommand]
   (let [subcmd-spec (get-full-spec subcommand)]
-    (cli/format-opts {:spec subcmd-spec})))
-
-(defn print-subcommand-help [subcommand]
-  (let [subcmd-help-options-string (display-subcommand-options subcommand)]
-    (binding [*out* *err*] 
-     (println subcmd-help-options-string))))
+      (cli/format-opts {:spec subcmd-spec})))
 
 (defn show-help? [opts]
   (if (get-in opts [:opts :help])
@@ -76,6 +71,11 @@
     (println default-help-string)
     (println (subcommand-help-string (opts :args)))))
   (prn opts))
+
+(defn print-subcommand-help [subcommand]
+  (let [subcmd-help-string (subcommand-help-string [subcommand])]
+    (binding [*out* *err*]
+     (println subcmd-help-string))))
 
 (def global-options {:debug {:coerce :boolean
                              :desc   "enable additional debug logging"
