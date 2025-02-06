@@ -1,7 +1,7 @@
 (ns gic.tools.subcommands.irdb.cli
   (:require [babashka.cli :as cli]
             [clojure.string :as str]
-            [gic.tools.utils :as utils]))
+            [gic.tools.utils.fs :as utils]))
 
 (declare subcommands)
 (declare global-options)
