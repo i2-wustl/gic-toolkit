@@ -3,65 +3,35 @@
             [clojure.string :as str]
             [gic.tools.utils :as utils]))
 
+(declare subcommands)
+(declare global-options)
+
 (def active-subcommand (atom nil))
 
-(def global-options {:debug {:coerce :boolean
-                             :desc   "enable additional debug logging"
-                             :default false}})
+(defn get-spec [subcommand]
+  (get-in subcommands [(keyword subcommand) :spec]))
 
-(def init-options-spec {:dbpath {:ref "/path/to/irdb.db"
-                                 :desc "The file path to the irdb database"
-                                 :alias :i
-                                 :require true
-                                 :validate {:pred #(-> % utils/file-exists? not)
-                                            :ex-msg #(format "[err] irdb file already exists: %s" (:value %))}}})
-                                  
-(def add-options-spec {})
-(def merge-dbs-options-spec {})
-(def dump-options-spec {})
+(defn get-full-spec [subcommand]
+  (let [subcmd-spec (get-spec subcommand)]
+    (merge global-options subcmd-spec)))
 
-(def options-dispatch {:init  init-options-spec
-                       :add   add-options-spec
-                       :merge merge-dbs-options-spec
-                       :dump  dump-options-spec})
-
-(defn merge-options [subcommand-options]
-  (merge global-options subcommand-options))
-
-(defn show-subcommand-help [subcommand]
-  (let [subcommand-spec (options-dispatch subcommand)
-        full-spec (merge-options subcommand-spec)]
-    (binding [*out* *err*] 
-     (println (cli/format-opts {:spec full-spec})))))
+(defn get-dispatch-fn [subcommand]
+  (let [subcmd (keyword subcommand)]
+    (get-in subcommands [subcmd :dispatch])))
 
 (defn display-subcommand-options [subcommand]
-  (let [subcommand-spec (options-dispatch subcommand)
-        full-spec (merge-options subcommand-spec)]
-    (cli/format-opts {:spec full-spec})))
+  (let [subcmd-spec (get-full-spec subcommand)]
+    (cli/format-opts {:spec subcmd-spec})))
 
-(defn init [opts]
-  (let [full-opts (assoc opts :subcommand :init :command :irdb)]
-    (when (get-in full-opts [:opts :help])
-      (show-subcommand-help (:subcommand full-opts)))
-    (prn full-opts)))
+(defn print-subcommand-help [subcommand]
+  (let [subcmd-help-options-string (display-subcommand-options subcommand)]
+    (binding [*out* *err*] 
+     (println subcmd-help-options-string))))
 
-(defn add [opts]
-  (let [full-opts (assoc opts :subcommand :add :command :irdb)]
-    (when (get-in full-opts [:opts :help])
-      (show-subcommand-help (:subcommand full-opts)))
-    (prn full-opts)))
-
-(defn merge-dbs [opts]
-  (let [full-opts (assoc opts :subcommand :merge :command :irdb)]
-    (if (get-in full-opts [:opts :help])
-      (show-subcommand-help (:subcommand full-opts)))
-    (prn full-opts)))
-
-(defn dump [opts]
-  (let [full-opts (assoc opts :subcommand :dump :command :irdb)]
-    (if (get-in full-opts [:opts :help])
-      (show-subcommand-help (:subcommand full-opts)))
-    (prn full-opts)))
+(defn show-help? [opts]
+  (if (get-in opts [:opts :help])
+    true
+    nil))
 
 (def default-help-string
  (str/trim "
@@ -92,7 +62,7 @@
 
 (defn subcommand-help-string [args]
   (let [subcommand (keyword (first args))
-        valid-subcommand? (contains? options-dispatch subcommand)]
+        valid-subcommand? (contains? subcommands subcommand)]
     (if valid-subcommand?
       (str/join "\n" 
         [(display-subcommand-help-header subcommand)
@@ -107,31 +77,70 @@
     (println (subcommand-help-string (opts :args)))))
   (prn opts))
 
+(def global-options {:debug {:coerce :boolean
+                             :desc   "enable additional debug logging"
+                             :default false}})
+
+(def subcommands 
+  {:init {:spec {:dbpath {:ref "/path/to/irdb.db"
+                          :desc "The file path to the irdb database [required] "
+                          :alias :i
+                          :require true
+                          :validate {:pred #(-> % utils/file-exists? not)
+                                     :ex-msg #(format "[err] irdb file already exists: %s" (:value %))}}}
+
+          :dispatch (fn [opts]
+                      (let [full-opts (assoc opts :subcommand :init :command :irdb)]
+                        (when (show-help? full-opts)
+                          (print-subcommand-help (:subcommand full-opts)))
+                        (prn full-opts)))}
+   :add {:spec {}
+         :dispatch (fn [opts]
+                     (let [full-opts (assoc opts :subcommand :add :command :irdb)]
+                        (when (show-help? full-opts)
+                          (print-subcommand-help (:subcommand full-opts)))
+                        (prn full-opts)))}
+   :merge {:spec {}
+           :dispatch (fn [opts]
+                       (let [full-opts (assoc opts :subcommand :merge :command :irdb)]
+                        (when (show-help? full-opts)
+                          (print-subcommand-help (:subcommand full-opts)))
+                        (prn full-opts)))}
+   :dump {:spec {}
+          :dispatch (fn [opts]
+                      (let [full-opts (assoc opts :subcommand :dump :command :irdb)]
+                        (when (show-help? full-opts)
+                          (print-subcommand-help (:subcommand full-opts)))
+                        (prn full-opts)))}
+   :help {:spec {}
+          :dispatch #'help}})
+
 (defn error-fn [{:keys [spec type cause msg option] :as data}]
   (if (= :org.babashka/cli type)
     (binding [*out* *err*]
       (case cause 
-         :require (println (format "[err] Missing required argument: %s\n\nPlease see 'gic-tk irdb help %s' for more information.\n" msg @active-subcommand))))
+         :require (println (format "[err] Missing required argument: %s\n\nPlease see 'gic-tk irdb help %s' for more information.\n" msg @active-subcommand))
+         :validate (println msg)))
     (throw (ex-info msg data)))
   (System/exit 1))
 
 (def dispatch-table
- [{:cmds ["init"]  :fn init      :spec (merge-options init-options-spec)  :error-fn error-fn}
-  {:cmds ["add"]   :fn add       :spec (merge-options add-options-spec)   :error-fn  error-fn}
-  {:cmds ["merge"] :fn merge-dbs :spec (merge-options merge-dbs-options-spec)  :error-fn error-fn}
-  {:cmds ["dump"]  :fn dump      :spec (merge-options dump-options-spec) :error-fn error-fn}
+ [{:cmds ["init"]  :fn (get-dispatch-fn "init")  :spec (get-full-spec "init")  :error-fn error-fn}
+  {:cmds ["add"]   :fn (get-dispatch-fn "add")   :spec (get-full-spec "add")   :error-fn error-fn}
+  {:cmds ["merge"] :fn (get-dispatch-fn "merge") :spec (get-full-spec "merge") :error-fn error-fn}
+  {:cmds ["dump"]  :fn (get-dispatch-fn "dump")  :spec (get-full-spec "dump")  :error-fn error-fn}
   {:cmds ["help"]  :fn help}
   {:cmds [] :fn help}])
 
-(defn update-active-subcmd-atom [args]
+(defn set-active-subcmd! [args]
   (let [subcommand (keyword (first args))
-        valid-subcommand? (contains? options-dispatch subcommand)]
+        valid-subcommand? (contains? subcommands subcommand)]
     (when valid-subcommand?
       (swap! active-subcommand (constantly (name subcommand))))))
 
 (defn main [opts]
   (let [args (:args opts)]
-    (update-active-subcmd-atom args)
+    (set-active-subcmd! args)
     (cli/dispatch dispatch-table args)
     (prn opts)))
 
