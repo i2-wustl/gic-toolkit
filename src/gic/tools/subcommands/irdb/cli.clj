@@ -1,7 +1,8 @@
 (ns gic.tools.subcommands.irdb.cli
   (:require [babashka.cli :as cli]
             [clojure.string :as str]
-            [gic.tools.utils.fs :as utils]))
+            [gic.tools.utils.fs :as utils]
+            [gic.tools.subcommands.irdb.init :as i]))
 
 (declare subcommands)
 (declare global-options)
@@ -93,7 +94,7 @@
                       (let [full-opts (assoc opts :subcommand :init :command :irdb)]
                         (when (show-help? full-opts)
                           (print-subcommand-help (:subcommand full-opts)))
-                        (prn full-opts)))}
+                        (i/run full-opts)))}
    :add {:spec {}
          :dispatch (fn [opts]
                      (let [full-opts (assoc opts :subcommand :add :command :irdb)]
