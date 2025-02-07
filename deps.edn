@@ -17,7 +17,7 @@
                               "--port" "8888"
                               "--middleware" "[cider.nrepl/cider-middleware]"
                               "-i"]}
-           :cli {:jvm-opts ["-Dlogback.configurationFile=/Users/idas/git/i2/pic-sure-extras/logback.xml" "-Xmx6g"]
+           :cli {:jvm-opts ["-Xmx6g"]
                  :main-opts ["-m" "gic.tools.core"]}
            :build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.3" :git/sha "15ead66"}}
                    :ns-default build}}}
