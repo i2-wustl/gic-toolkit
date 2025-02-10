@@ -38,6 +38,8 @@ function build_pic_sure_hpds {
     git clone git@github.com:indraniel/pic-sure-hpds pic-sure-hpds
     log "Entering into pic-sure-hpds git repository"
     cd pic-sure-hpds
+    log "Entering into the 2025-loading-idea branch"
+    git checkout -b 2025-loading-idea origin/2025-loading-idea
     log "Suppress war module building"
     awk '/<module>war<\/module>/{next} {print}' pom.xml > pom.xml.new && mv pom.xml.new pom.xml
     log "running maven"
@@ -46,15 +48,15 @@ function build_pic_sure_hpds {
 }
 
 function cleanup {
-#    log "remove pic-sure-hpds git repository directory"
-#    rm -rf ${BUILD_DIR}/pic-sure-hpds
-#    log "remove pi-sure git repository directory"
-#    rm -rf ${BUILD_DIR}/pic-sure-hpds
+    log "remove pic-sure-hpds git repository directory"
+    rm -rf ${BUILD_DIR}/pic-sure-hpds
+    log "remove pi-sure git repository directory"
+    rm -rf ${BUILD_DIR}/pic-sure-hpds
     log "remove temporary build directory: ${BUILD_DIR}"
     rm -rf ${BUILD_DIR}
 }
 
 ensure_build_dir ;
-#build_pic_sure ;
-#build_pic_sure_hpds ;
+build_pic_sure ;
+build_pic_sure_hpds ;
 cleanup ;

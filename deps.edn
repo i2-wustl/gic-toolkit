@@ -8,7 +8,9 @@
         com.github.seancorfield/next.jdbc {:mvn/version "1.3.994"}
         org.duckdb/duckdb_jdbc {:mvn/version "1.1.3"}
         org.babashka/cli {:mvn/version "0.8.62"}
-        edu.harvard.hms.dbmi.avillach.hpds/etl {:mvn/version "1.0-SNAPSHOT"}}
+        selmer/selmer {:mvn/version "1.12.62"}
+        edu.harvard.hms.dbmi.avillach.hpds/etl {:mvn/version "1.0-SNAPSHOT"}
+        edu.harvard.hms.dbmi.avillach.hpds/data {:mvn/version "1.0-SNAPSHOT"}}
  :aliases {:repl {:extra-deps {nrepl/nrepl {:mvn/version "1.1.0"}
                                cider/cider-nrepl {:mvn/version "0.48.0"}}
                   :jvm-opts  ["-Dgic.tools.repl=true"]

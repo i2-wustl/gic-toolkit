@@ -2,7 +2,8 @@
   (:require [babashka.cli :as cli]
             [clojure.string :as str]
             [gic.tools.utils.fs :as utils]
-            [gic.tools.subcommands.irdb.init :as i]))
+            [gic.tools.subcommands.irdb.init :as i]
+            [gic.tools.subcommands.irdb.add :as a]))
 
 (declare subcommands)
 (declare global-options)
@@ -95,12 +96,37 @@
                         (when (show-help? full-opts)
                           (print-subcommand-help (:subcommand full-opts)))
                         (i/run full-opts)))}
-   :add {:spec {}
+
+   :add {:spec {:input-parquet {:ref "/path/to/input.parquet"
+                                :desc "The input data source to add to the irdb database [required]"
+                                :alias :i
+                                :require true
+                                :validate {:pred #(-> % utils/file-exists?)
+                                           :ex-msg #(format "[err] could not find on file system: %s" (:value %))}}
+
+                :target-irdb {:ref "/path/to/irdb.db"
+                              :desc "The target irdb database to add data into [required]"
+                              :alias :i
+                              :require true
+                              :validate {:pred #(-> % utils/file-exists?)
+                                         :ex-msg #(format "[err] could not find on file system: %s" (:value %))}}
+
+                :concept {:ref "\\concept\\path"
+                          :desc "A specific concept path to add into the irdb from the input parquet data source"
+                          :alias :c
+                          :require false}
+
+                :concepts-list {:ref "/path/to/concepts.list"
+                                :desc "A list of concept paths to add into the irdb from the input parquet data source (one concept per line)"
+                                :alias :l
+                                :require false
+                                :validate {:pred #(-> % utils/file-exists?)
+                                           :ex-msg #(format "[err] could not find on file system: %s" (:value %))}}} 
          :dispatch (fn [opts]
                      (let [full-opts (assoc opts :subcommand :add :command :irdb)]
                         (when (show-help? full-opts)
                           (print-subcommand-help (:subcommand full-opts)))
-                        (prn full-opts)))}
+                        (a/run full-opts)))}
    :merge {:spec {}
            :dispatch (fn [opts]
                        (let [full-opts (assoc opts :subcommand :merge :command :irdb)]
@@ -142,6 +168,5 @@
 (defn main [opts]
   (let [args (:args opts)]
     (set-active-subcmd! args)
-    (cli/dispatch dispatch-table args)
-    (prn opts)))
+    (cli/dispatch dispatch-table args)))
 

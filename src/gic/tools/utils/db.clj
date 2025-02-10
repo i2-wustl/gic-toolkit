@@ -1,7 +1,9 @@
 (ns gic.tools.utils.db
   (:require [next.jdbc.prepare :as p]
             [next.jdbc.result-set :as rs]
-            [next.jdbc :as jdbc])
+            [next.jdbc :as jdbc]
+            [clojure.java.io :as io]
+            [selmer.parser :as t])
   (:import (java.sql PreparedStatement ResultSet ResultSetMetaData)
            (edu.harvard.hms.dbmi.avillach.hpds.data.phenotype PhenoCube)))
 
@@ -41,3 +43,6 @@
   (with-open [dis (-> buf java.io.ByteArrayInputStream. java.io.ObjectInputStream.)]
      (.readObject dis)))
 
+(defn render-sql-template [sql-template-path params]
+  (let [sql-template (slurp (io/resource sql-template-path))]
+    (t/render sql-template params)))
