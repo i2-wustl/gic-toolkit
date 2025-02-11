@@ -3,8 +3,7 @@
             [next.jdbc.prepare :as p]
             [clojure.tools.logging :as log]
             [clojure.string :as s]
-            [gic.tools.utils.db :as u]
-            [gic.tools.subcommands.irdb.add :as a])
+            [gic.tools.utils.db :as u])
   (:import (java.util Date)
            (edu.harvard.hms.dbmi.avillach.hpds.data.phenotype PhenoCube PhenoInput)))
 
@@ -16,14 +15,14 @@
    nil))
 
 (defn get-all-concepts-in-input-parquet [input-parquet-path]
-  (with-open [conn (u/duckdb-connect-ro "")]
+  (with-open [conn (u/duckdb-connect-rw "")]
    (let [sql-template (str "select concept_path, count(*) as count "
                            "from read_parquet('%s') group by concept_path")
          sql (format sql-template input-parquet-path)]
      (mapv :CONCEPT_PATH (sort-by :count (jdbc/execute! conn [sql]))))))
 
 (defn assemble-concepts [input-concept input-concepts-list-path input-parquet-path]
-  (let [ concepts-list (get-concepts-from-list-path input-concepts-list-path)]
+  (let [concepts-list (get-concepts-from-list-path input-concepts-list-path)]
     (cond 
       (and (nil? input-concept) 
            (nil? concepts-list)) (get-all-concepts-in-input-parquet input-parquet-path)
@@ -36,7 +35,7 @@
                  vec))))
 
 (defn concept-input-records-count [concept src-parquet-path]
-  (with-open [conn (u/duckdb-connect-ro "")]
+  (with-open [conn (u/duckdb-connect-rw "")]
    (let [sql-template (str "select count(*) as count "
                            "from read_parquet('%s') "
                            "where concept_path = ?")
@@ -44,7 +43,7 @@
      (jdbc/execute-one! conn [sql concept]))))
 
 (defn peek-concept-record [concept src-parquet-path]
-  (with-open [conn (u/duckdb-connect-ro "")]
+  (with-open [conn (u/duckdb-connect-rw "")]
     (let [sql-template (str "select * "
                             "from read_parquet('%s') "
                             "where concept_path = ? "
@@ -52,13 +51,18 @@
           sql (format sql-template src-parquet-path)]
       (jdbc/execute-one! conn [sql concept]))))
 
+(defn sanitize-concept [concept-path]
+  (let [pheno-input (doto (PhenoInput.)
+                       (.setConceptPath concept-path))]
+    (.sanitizeConceptPath pheno-input)))
+
 (defn create-pheno-input [record-row]
   (let [patient-id (:PATIENT_NUM record-row)
         concept-path (:CONCEPT_PATH record-row)
         tval-char (:TVAL_CHAR record-row)
         nval-num (:NVAL_NUM record-row)
         nval-num-str (if (nil? nval-num) nil (str nval-num))
-        timestamp (-> (:TIMESTAMP record-row) long Date.)]
+        timestamp (:TIMESTAMP record-row)]
    (doto (PhenoInput.)
      (.setPatientNum patient-id)
      (.setConceptPath concept-path)
@@ -69,8 +73,9 @@
 (defn create-pheno-cube [concept parquet-path]
   (let [sample-record (peek-concept-record concept parquet-path)
         pheno-input   (create-pheno-input sample-record)
-        class-type    (if (.isAlpha pheno-input) (class "") (class 1.0))]
-    (PhenoCube. concept class-type)))
+        class-type    (if (.isAlpha pheno-input) (class "") (class 1.0))
+        sanitized-concept (sanitize-concept concept)]
+    (PhenoCube. sanitized-concept class-type)))
 
 (defn add-record-into-pheno-cube! [pheno-cube [i row-record]]
   (let [pheno-input (create-pheno-input row-record)
@@ -79,25 +84,41 @@
       (log/info (format "    # records processed: %d" i)))
     (.addPhenoInput pheno-cube pheno-input)))
 
-(defn insert-concept-into-irdb! [irdb-path concept pheno-cube]
+;(defn insert-cube-into-irdb! [irdb-path pheno-cube]
+;  (with-open [conn (u/duckdb-connect-rw irdb-path)]
+;    (let [concept (.name pheno-cube)
+;          sql (str "insert into pheno_cubes (concept_path, cube) values (?, ?) "
+;                   "on conflict do update set cube = excluded.cube")
+;          ps   (jdbc/prepare conn [sql])]
+;      (log/info (format "irdb-path: %s" irdb-path))
+;      (log/info (format "insert SQL: %s" sql))
+;      (jdbc/execute-one! (p/set-parameters ps [concept ^PhenoCube pheno-cube])))))
+
+(defn insert-cube-into-irdb! [irdb-path pheno-cube]
   (with-open [conn (u/duckdb-connect-rw irdb-path)]
-    (let [sql (str "insert into cubes (concept_path, cube) values (?, ?) "
-                   "on conflict do update set cube = excluded.cube")
-          ps   (jdbc/prepare conn [sql])]
-     (jdbc/execute-one! (p/set-parameters ps [concept ^PhenoCube pheno-cube])))))
+    (let [concept (.name pheno-cube)
+          sql (str "insert into pheno_cubes (concept_path, cube) values (?, ?) "
+                   "on conflict do update set cube = excluded.cube")]
+      (log/info (format "irdb-path: %s" irdb-path))
+      (log/info (format "insert SQL: %s" sql))
+      (jdbc/execute-one! conn [sql concept ^PhenoCube pheno-cube]))))
 
 (defn process-concept! [concept parquet-path irdb-path]
   (let [pheno-cube (create-pheno-cube concept parquet-path)
         sql-template (str "select * "
                           "from read_parquet('%s') "
-                          "where concept_path = ?")
-        sql (format sql-template parquet-path)]
-    (with-open [conn (u/duckdb-connect-ro "")] 
-      (run! #(a/add-record-into-pheno-cube! pheno-cube %)
-            (map-indexed vector (jdbc/plan conn [sql concept]))))
+                          "where concept_path = ? "
+                          "LIMIT 2")
+        sql (format sql-template parquet-path)
+        counter (atom 1)]
+    (with-open [conn (u/duckdb-connect-rw "")]
+      (run! #(do (->> (vector @counter %)
+                      (add-record-into-pheno-cube! pheno-cube))
+                 (swap! counter inc))
+            (jdbc/plan conn [sql concept])))
     (log/info (format "    Finished adding records into cube (%d records)" (.numRecords pheno-cube)))
     (log/info "    Inserting pheno-cube into irdb")
-    (insert-concept-into-irdb! irdb-path concept pheno-cube)
+    (insert-cube-into-irdb! irdb-path pheno-cube)
     (log/info "    Done")))
 
 (defn import-concept-data! [concept parquet-path irdb-path]
@@ -121,20 +142,45 @@
         concept-list-path (get-in input-opts [:opts :concepts-list])
         final-concepts (assemble-concepts input-concept concept-list-path input-parquet)]
     (log/info (format "Found %d concepts to process" (count final-concepts)))
-    (comment add-concepts-to-irdb! final-concepts target-irdb-path input-parquet)
+    (add-concepts-to-irdb! final-concepts target-irdb-path input-parquet)
     (comment prn input-opts)
     (log/info "All Done!")))
 
 (comment
-  (def test-opts {:dispatch ["add"]
-                  :opts {:debug false 
-                         :input-parquet "foo.parquet"
-                         :concept "\\path\\to\\foo"
-                         :concepts-list "concepts.list"}
-                  :args nil
-                  :subcommand :add
-                  :command :irdb})
-  (run test-opts)
+  (def test-opts-v1 {:dispatch ["add"]
+                     :opts {:debug false
+                            :input-parquet "foo.parquet"
+                            :concept "\\path\\to\\foo"
+                            :concepts-list "concepts.list"}
+                     :args nil
+                     :subcommand :add
+                     :command :irdb})
+  (run test-opts-v1)
+
+  (def test-input-parquet "/Users/idas/Downloads/age.parquet")
+  (def test-input-irdb "/Users/idas/git/i2/pic-sure-extras/data/duckdb/test-irdb.duckdb")
+  (def test-opts-v2 {:dispatch ["add"]
+                     :opts {:debug false
+                            :input-parquet test-input-parquet
+                            :target-irdb test-input-irdb
+                            :concept nil
+                            :concepts-list nil}
+                     :args nil
+                     :subcommand :add
+                     :command :irdb})
+  (run test-opts-v2)
+
+  (def test-concepts (assemble-concepts nil nil test-input-parquet))
+  (def test-concept (first test-concepts))
+  (sanitize-concept test-concept)
+  (def test-concept-record (peek-concept-record test-concept test-input-parquet))
+  (def test-pheno-input (create-pheno-input test-concept-record))
+  (bean test-pheno-input)
+  (def test-pheno-cube (create-pheno-cube test-concept test-input-parquet))
+  (bean test-pheno-cube)
+  (.name test-pheno-cube)
+  (import-concept-data! test-concept test-input-parquet test-input-irdb)
+
   (get-concepts-from-list-path "/Users/idas/Downloads/test-concepts.list")
   (get-concepts-from-list-path nil)
   (get-all-concepts-in-input-parquet "/Users/idas/Downloads/age.parquet")

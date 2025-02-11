@@ -106,7 +106,7 @@
 
                 :target-irdb {:ref "/path/to/irdb.db"
                               :desc "The target irdb database to add data into [required]"
-                              :alias :i
+                              :alias :o
                               :require true
                               :validate {:pred #(-> % utils/file-exists?)
                                          :ex-msg #(format "[err] could not find on file system: %s" (:value %))}}
