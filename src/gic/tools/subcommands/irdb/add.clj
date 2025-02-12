@@ -5,7 +5,10 @@
             [clojure.string :as s]
             [gic.tools.utils.db :as u])
   (:import (java.util Date)
+           (java.io File)
            (edu.harvard.hms.dbmi.avillach.hpds.data.phenotype PhenoCube PhenoInput)))
+
+(def all-patient-ids (atom (sorted-set)))
 
 (defn get-concepts-from-list-path [input-path]
   (if-not (nil? input-path)
@@ -103,6 +106,24 @@
       (comment log/info (format "insert SQL: %s" sql))
       (jdbc/execute-one! conn [sql concept ^PhenoCube pheno-cube]))))
 
+(defn collect-patient-id [row-record]
+  (swap! all-patient-ids conj (:PATIENT_NUM row-record)))
+
+(defn add-patient-ids-to-irdb! [irdb-path]
+   (let [all-ids (s/join "\n" @all-patient-ids)
+         tmp-file (File/createTempFile "patient-ids" ".csv")
+         tmp-file-name (.getPath tmp-file)
+         sql-1 (format "CREATE TABLE temp AS SELECT * from read_csv('%s', names = ['id'])" tmp-file-name)
+         sql-2 (str "INSERT INTO allids "
+                    "SELECT t.id FROM temp t WHERE t.id NOT IN "
+                    "(SELECT patient_id from allids)")
+         sql-3 "DROP TABLE temp"]
+     (log/info (format "\tWriting patient-ids to temp csv file: %s" tmp-file-name))
+     (spit tmp-file-name all-ids)
+     (log/info "\tUpdating allids table with new patients ids in temp csv file")
+     (with-open [conn (u/duckdb-connect-rw irdb-path)]
+       (run! #(jdbc/execute-one! conn [%]) [sql-1 sql-2 sql-3]))))
+
 (defn process-concept! [concept parquet-path irdb-path]
   (let [pheno-cube (create-pheno-cube concept parquet-path)
         sql-template (str "select * "
@@ -114,6 +135,7 @@
     (with-open [conn (u/duckdb-connect-rw "")]
       (run! #(do (->> (vector @counter %)
                       (add-record-into-pheno-cube! pheno-cube))
+                 (collect-patient-id %)
                  (swap! counter inc))
             (jdbc/plan conn [sql concept])))
     (log/info (format "    Finished adding records into cube (%d records)" (.numRecords pheno-cube)))
@@ -143,6 +165,8 @@
         final-concepts (assemble-concepts input-concept concept-list-path input-parquet)]
     (log/info (format "Found %d concepts to process" (count final-concepts)))
     (add-concepts-to-irdb! final-concepts target-irdb-path input-parquet)
+    (log/info (format "Logging new patient ids into allIds table in irdb"))
+    (add-patient-ids-to-irdb! target-irdb-path)
     (comment prn input-opts)
     (log/info "All Done!")))
 
@@ -185,5 +209,15 @@
   (get-concepts-from-list-path nil)
   (get-all-concepts-in-input-parquet "/Users/idas/Downloads/age.parquet")
   (concept-input-records-count "\\ACT Demographics\\Age" "/Users/idas/Downloads/age.parquet")
-  (str (:NVAL_NUM (peek-concept-record "\\ACT Demographics\\Age" "/Users/idas/Downloads/age.parquet"))))
+  (str (:NVAL_NUM (peek-concept-record "\\ACT Demographics\\Age" "/Users/idas/Downloads/age.parquet")))
+
+  ; testing patient ids merging
+  @all-patient-ids
+  (swap! all-patient-ids empty)
+  (swap! all-patient-ids conj 2)
+  (swap! all-patient-ids conj 3)
+  (swap! all-patient-ids conj 1001)
+  (swap! all-patient-ids conj 1002)
+  (swap! all-patient-ids conj 2004)
+  (add-patient-ids-to-irdb! test-input-irdb))
   
