@@ -87,16 +87,6 @@
       (log/info (format "    # records processed: %d" i)))
     (.addPhenoInput pheno-cube pheno-input)))
 
-;(defn insert-cube-into-irdb! [irdb-path pheno-cube]
-;  (with-open [conn (u/duckdb-connect-rw irdb-path)]
-;    (let [concept (.name pheno-cube)
-;          sql (str "insert into pheno_cubes (concept_path, cube) values (?, ?) "
-;                   "on conflict do update set cube = excluded.cube")
-;          ps   (jdbc/prepare conn [sql])]
-;      (log/info (format "irdb-path: %s" irdb-path))
-;      (log/info (format "insert SQL: %s" sql))
-;      (jdbc/execute-one! (p/set-parameters ps [concept ^PhenoCube pheno-cube])))))
-
 (defn insert-cube-into-irdb! [irdb-path pheno-cube]
   (with-open [conn (u/duckdb-connect-rw irdb-path)]
     (let [concept (.name pheno-cube)
