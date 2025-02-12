@@ -99,8 +99,8 @@
     (let [concept (.name pheno-cube)
           sql (str "insert into pheno_cubes (concept_path, cube) values (?, ?) "
                    "on conflict do update set cube = excluded.cube")]
-      (log/info (format "irdb-path: %s" irdb-path))
-      (log/info (format "insert SQL: %s" sql))
+      (comment log/info (format "irdb-path: %s" irdb-path))
+      (comment log/info (format "insert SQL: %s" sql))
       (jdbc/execute-one! conn [sql concept ^PhenoCube pheno-cube]))))
 
 (defn process-concept! [concept parquet-path irdb-path]
