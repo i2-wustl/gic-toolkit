@@ -10,10 +10,10 @@
 
 (defn validate-minor-irdbs [minor-irdb-paths]
   (letfn [(ensure-irdb [irdb-path]
-                      (when (not (utils/file-exists? irdb-path))
-                        (os/exit 1 (format "[err] Did not find irdb on file system: %s" irdb-path))))]
+               (when (not (utils/file-exists? irdb-path))
+                 (let [msg "[err] Did not find irdb on file system: %s"]
+                  (os/exit 1 (format msg irdb-path)))))]
     (run! #(ensure-irdb %) minor-irdb-paths)))
-                         
 
 (defn run [input-opts]
   (let [main-irdb-path (get-in input-opts [:opts :main-irdb])
