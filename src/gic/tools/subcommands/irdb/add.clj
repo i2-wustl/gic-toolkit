@@ -54,10 +54,10 @@
           sql (format sql-template src-parquet-path)]
       (jdbc/execute-one! conn [sql concept]))))
 
-(defn sanitize-concept [concept-path]
-  (let [pheno-input (doto (PhenoInput.)
-                       (.setConceptPath concept-path))]
-    (.sanitizeConceptPath pheno-input)))
+;(defn sanitize-concept [concept-path]
+;  (let [pheno-input (doto (PhenoInput.)
+;                       (.setConceptPath concept-path))]
+;    (.sanitizeConceptPath pheno-input)))
 
 (defn create-pheno-input [record-row]
   (let [patient-id (:PATIENT_NUM record-row)
@@ -77,7 +77,7 @@
   (let [sample-record (peek-concept-record concept parquet-path)
         pheno-input   (create-pheno-input sample-record)
         class-type    (if (.isAlpha pheno-input) (class "") (class 1.0))
-        sanitized-concept (sanitize-concept concept)]
+        sanitized-concept (.santizeConceptPath pheno-input)]
     (PhenoCube. sanitized-concept class-type)))
 
 (defn add-record-into-pheno-cube! [pheno-cube [i row-record]]
@@ -186,7 +186,7 @@
 
   (def test-concepts (assemble-concepts nil nil test-input-parquet))
   (def test-concept (first test-concepts))
-  (sanitize-concept test-concept)
+  ;(sanitize-concept test-concept)
   (def test-concept-record (peek-concept-record test-concept test-input-parquet))
   (def test-pheno-input (create-pheno-input test-concept-record))
   (bean test-pheno-input)
