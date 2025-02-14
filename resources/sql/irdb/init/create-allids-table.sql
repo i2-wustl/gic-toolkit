@@ -1,3 +1,3 @@
 CREATE TABLE IF NOT EXISTS allids (
-    patient_id INTEGER UNIQUE
+    patient_id INTEGER PRIMARY KEY
 )
