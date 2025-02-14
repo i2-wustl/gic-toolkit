@@ -3,7 +3,8 @@
             [clojure.string :as str]
             [gic.tools.utils.fs :as utils]
             [gic.tools.subcommands.irdb.init :as i]
-            [gic.tools.subcommands.irdb.add :as a]))
+            [gic.tools.subcommands.irdb.add :as a]
+            [gic.tools.subcommands.irdb.merge :as m]))
 
 (declare subcommands)
 (declare global-options)
@@ -52,8 +53,13 @@
      for more details on a subcommand
    "))
 
+(defn subcommand-help-header-string [subcommand]
+  (case subcommand
+    :merge "Usage: gic-tk irdb %s <options> /path/to/irdb1.db /path/to/irdb2.db ..."
+    "Usage: gic-tk irdb %s <options> <arguments>"))
+
 (defn display-subcommand-help-header [subcommand]
-  (-> "Usage: gic-tk irdb %s <options> <arguments>"
+  (-> (subcommand-help-header-string subcommand)
       (format (name subcommand))
       str/triml))
 
@@ -127,12 +133,17 @@
                         (when (show-help? full-opts)
                           (print-subcommand-help (:subcommand full-opts)))
                         (a/run full-opts)))}
-   :merge {:spec {}
+   :merge {:spec {:main-irdb {:ref "/path/to/main-irdb.db"
+                              :desc "The maininput irdb database to merge cubes into [required]"
+                              :alias :m
+                              :require true
+                              :validate {:pred #(-> % utils/file-exists?)
+                                         :ex-msg #(format "[err] could not find on file system: %s" (:value %))}}} 
            :dispatch (fn [opts]
                        (let [full-opts (assoc opts :subcommand :merge :command :irdb)]
                         (when (show-help? full-opts)
                           (print-subcommand-help (:subcommand full-opts)))
-                        (prn full-opts)))}
+                        (m/run full-opts)))}
    :dump {:spec {}
           :dispatch (fn [opts]
                       (let [full-opts (assoc opts :subcommand :dump :command :irdb)]
