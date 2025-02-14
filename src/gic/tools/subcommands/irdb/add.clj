@@ -77,7 +77,7 @@
   (let [sample-record (peek-concept-record concept parquet-path)
         pheno-input   (create-pheno-input sample-record)
         class-type    (if (.isAlpha pheno-input) (class "") (class 1.0))
-        sanitized-concept (.santizeConceptPath pheno-input)]
+        sanitized-concept (.sanitizeConceptPath pheno-input)]
     (PhenoCube. sanitized-concept class-type)))
 
 (defn add-record-into-pheno-cube! [pheno-cube [i row-record]]
