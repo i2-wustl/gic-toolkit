@@ -1,5 +1,6 @@
 (ns gic.tools.subcommands.irdb.merge
-  (:require [clojure.tools.logging :as log]
+  (:require [next.jdbc :as jdbc]
+            [clojure.tools.logging :as log]
             [gic.tools.utils.fs :as utils]
             [gic.tools.utils.os :as os]
             [gic.tools.utils.db :as u]))

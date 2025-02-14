@@ -1,11 +1,9 @@
 (ns gic.tools.subcommands.irdb.add
   (:require [next.jdbc :as jdbc]
-            [next.jdbc.prepare :as p]
             [clojure.tools.logging :as log]
             [clojure.string :as s]
             [gic.tools.utils.db :as u])
-  (:import (java.util Date)
-           (java.io File)
+  (:import (java.io File)
            (edu.harvard.hms.dbmi.avillach.hpds.data.phenotype PhenoCube PhenoInput)))
 
 (def all-patient-ids (atom (sorted-set)))
