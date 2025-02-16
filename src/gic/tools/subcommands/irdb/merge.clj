@@ -45,3 +45,11 @@
     (merge-irdbs! main-irdb-path minor-irdb-paths)
     (comment prn input-opts)
     (log/info "All Done!")))
+
+;;; testing
+;;; clj -M:cli irdb init -i data/duckdb/test-child1.duckdb
+;;; clj -M:cli irdb init -i data/duckdb/test-child2.duckdb
+;;; clj -M:cli irdb init -i data/duckdb/test-merge.duckdb
+;;; clj -M:cli irdb add --input-parquet ~/Downloads/age.parquet --target-irdb data/duckdb/test-child1.duckdb
+;;; clj -M:cli irdb add --input-parquet ~/Downloads/race.parquet --target-irdb data/duckdb/test-child2.duckdb
+;;; clj -M:cli irdb merge --main-irdb data/duckdb/test-merge.duckdb data/duckdb/test-child1.duckdb data/duckdb/test-child2.duckdb
