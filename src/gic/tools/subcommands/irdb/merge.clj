@@ -17,7 +17,7 @@
                   (os/exit 1 (format msg irdb-path)))))]
     (run! #(ensure-irdb %) minor-irdb-paths)))
 
-(defn merge-irdb! [main-irdb minor-irdb]
+(defn merge-irdb [main-irdb minor-irdb]
   (let [sql-1 (format "ATTACH '%s' as child (READ_ONLY)" minor-irdb)
         sql-2 (str "INSERT INTO pheno_cubes "
                    "SELECT * from child.pheno_cubes "
@@ -29,11 +29,11 @@
     (with-open [conn (u/duckdb-connect-rw main-irdb)]
       (run! #(jdbc/execute-one! conn [%]) [sql-1 sql-2 sql-3]))))
 
-(defn merge-irdbs! [main-irdb minor-irdbs]
+(defn merge-irdbs [main-irdb minor-irdbs]
   (let [total (count minor-irdbs)]
     (doseq [[i irdb] (map-indexed vector minor-irdbs)]
       (log/info (format "[ %d | %d ] Merging irdb: %s" (+ i 1) total irdb))
-      (merge-irdb! main-irdb irdb)
+      (merge-irdb main-irdb irdb)
       (log/info (format "[ %d | %d ] Finished merging" (+ i 1) total)))))
 
 (defn run [input-opts]
@@ -42,7 +42,7 @@
     (ensure-minor-irdb-args minor-irdb-paths)
     (log/info (format "Master irdb: %s" main-irdb-path))
     (validate-minor-irdbs minor-irdb-paths)
-    (merge-irdbs! main-irdb-path minor-irdb-paths)
+    (merge-irdbs main-irdb-path minor-irdb-paths)
     (comment prn input-opts)
     (log/info "All Done!")))
 
