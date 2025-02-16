@@ -3,6 +3,8 @@
             [clojure.string :as str]
             [gic.tools.subcommands.irdb.cli :as i]))
 
+(def version-number "0.0.1")
+
 (defn help [opts]
   (println (str/trim "
      Usage: gic-tk <subcommand> <options>
@@ -21,8 +23,12 @@
        help     subcommand help message
 
      help: this help message
+     version: version number information
    "))
   (prn opts))
+
+(defn version [opts]
+  (println (format "Version: %s" version-number)))
 
 
 (defn irdb [opts]
@@ -31,6 +37,7 @@
 (def dispatch-table
   [{:cmds ["irdb"] :fn irdb}
    {:cmds ["help"] :fn help}
+   {:cmds ["version"] :fn version}
    {:cmds [] :fn help}])
 
 (defn -main [& args]
