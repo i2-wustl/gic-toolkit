@@ -4,7 +4,8 @@
             [gic.tools.utils.fs :as utils]
             [gic.tools.subcommands.irdb.init :as i]
             [gic.tools.subcommands.irdb.add :as a]
-            [gic.tools.subcommands.irdb.merge :as m]))
+            [gic.tools.subcommands.irdb.merge :as m]
+            [gic.tools.subcommands.irdb.dump :as d]))
 
 (declare subcommands)
 (declare global-options)
@@ -144,12 +145,23 @@
                         (when (show-help? full-opts)
                           (print-subcommand-help (:subcommand full-opts)))
                         (m/run full-opts)))}
-   :dump {:spec {}
+   :dump {:spec {:input-irdb {:ref "/path/to/input.parquet"
+                              :desc "The input data source to add to the irdb database [required]"
+                              :alias :i
+                              :require true
+                              :validate {:pred #(-> % utils/file-exists?)
+                                         :ex-msg #(format "[err] could not find on file system: %s" (:value %))}}
+                 :target-javabin {:ref "/path/to/store.javabin"
+                                  :desc "The target javabin file to create data into [required]"
+                                  :alias :t
+                                  :require true
+                                  :validate {:pred #(-> % utils/file-exists? not)
+                                             :ex-msg #(format "[err] The javabin file already exists: %s" (:value %))}}}
           :dispatch (fn [opts]
                       (let [full-opts (assoc opts :subcommand :dump :command :irdb)]
                         (when (show-help? full-opts)
                           (print-subcommand-help (:subcommand full-opts)))
-                        (prn full-opts)))}
+                        (d/run full-opts)))}
    :help {:spec {}
           :dispatch #'help}})
 
