@@ -40,9 +40,8 @@
   (let [main-irdb-path (get-in input-opts [:opts :main-irdb])
         minor-irdb-paths (:args input-opts)]
     (ensure-minor-irdb-args minor-irdb-paths)
-    (comment log/info (format "Master irdb: %s" (main-irdb-path)))
-    (comment log/info (format "Logging new patient ids into allIds table in irdb"))
+    (log/info (format "Master irdb: %s" main-irdb-path))
     (validate-minor-irdbs minor-irdb-paths)
-    (comment merge-irdbs! main-irdb-path minor-irdb-paths)
-    (prn input-opts)
+    (merge-irdbs! main-irdb-path minor-irdb-paths)
+    (comment prn input-opts)
     (log/info "All Done!")))
