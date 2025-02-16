@@ -24,9 +24,8 @@
                    "ON CONFLICT "
                    "DO UPDATE SET cube = EXCLUDED.cube")
         sql-3 (str "INSERT INTO allids "
-                   "SELECT * from child.allids "
-                   "ON CONFLICT "
-                   "DO UPDATE SET patient_id = EXCLUDED.patient_id")]
+                   "SELECT t.patient_id FROM child.allids t "
+                   "WHERE t.patient_id NOT IN (SELECT patient_id from allids)")]
     (with-open [conn (u/duckdb-connect-rw main-irdb)]
       (run! #(jdbc/execute-one! conn [%]) [sql-1 sql-2 sql-3]))))
 
