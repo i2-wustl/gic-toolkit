@@ -62,7 +62,7 @@
     (let [total (:total (jdbc/execute-one! conn ["select count(*) as total from pheno_cubes"]))
           sql "select concept_path as concept, cube from pheno_cubes order by concept_path"
           counter (atom 1)]
-        (run! #(do (->> (vector counter %)
+        (run! #(do (->> (vector @counter %)
                         (load-cube total loader))
                    (swap! counter inc)) (jdbc/plan conn [sql])))))
 
