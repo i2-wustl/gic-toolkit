@@ -151,12 +151,16 @@
                               :require true
                               :validate {:pred #(-> % utils/file-exists?)
                                          :ex-msg #(format "[err] could not find on file system: %s" (:value %))}}
-                 :target-javabin {:ref "/path/to/store.javabin"
-                                  :desc "The target javabin file to create data into [required]"
-                                  :alias :t
-                                  :require true
-                                  :validate {:pred #(-> % utils/file-exists? not)
-                                             :ex-msg #(format "[err] The javabin file already exists: %s" (:value %))}}}
+                 :target-dir {:ref "/path/to/javabin.store/"
+                              :desc "The target javabin directory to create and place data into [required]"
+                              :alias :t
+                              :require true}
+                 :encryption-file {:ref "/path/to/encryption_key"
+                                   :desc "The encryption key file to secure the observation store files [required]"
+                                   :alias :e
+                                   :require true
+                                   :validate {:pred #(-> % utils/file-exists?)
+                                              :ex-msg #(format "[err] could find on file system: %s" (:value %))}}}
           :dispatch (fn [opts]
                       (let [full-opts (assoc opts :subcommand :dump :command :irdb)]
                         (when (show-help? full-opts)
