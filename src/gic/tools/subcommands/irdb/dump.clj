@@ -79,7 +79,7 @@
 (defn run [input-opts]
   (let [src-irdb-path (get-in input-opts [:opts :input-irdb])
         target-dir-path (get-in input-opts [:opts :target-dir])
-        encrypt-file-path (get input-opts [:opts :encryption-file])]
+        encrypt-file-path (get-in input-opts [:opts :encryption-file])]
     (log/info (format "Source irdb: %s" src-irdb-path))
     (log/info (format "Target javabin directory: %s" target-dir-path))
     (log/info (format "Encryption File: %s" encrypt-file-path))
