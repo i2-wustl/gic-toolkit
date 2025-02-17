@@ -43,6 +43,13 @@
   (with-open [dis (-> buf java.io.ByteArrayInputStream. java.io.ObjectInputStream.)]
      (.readObject dis)))
 
+(defn duckdb-blob->object [blob-rs]
+  (let [size (.length blob-rs)
+        buf  (byte-array size)
+        bstream (.getBinaryStream blob-rs)
+        _ (.read bstream buf 0 size)]
+    (deserialize buf)))
+
 (defn render-sql-template [sql-template-path params]
   (let [sql-template (slurp (io/resource sql-template-path))]
     (t/render sql-template params)))

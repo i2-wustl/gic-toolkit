@@ -47,7 +47,7 @@
 
 (defn load-cube [total loader [i row-record]]
   (let [concept (:concept row-record)
-        pheno-cube (u/deserialize (:concept row-record))
+        pheno-cube (u/duckdb-blob->object (:cube row-record))
         observations (vec (.sortedByKey pheno-cube))]
     (log/info (format "[ %d | %d ] Loading concept: %s" i total concept))
     (.setLoadingMap pheno-cube observations)
