@@ -3,6 +3,7 @@
             [clojure.java.io :as io]
             [gic.tools.utils.fs :as fs]
             [gic.tools.utils.db :as u]
+            [clojure.string :as s]
             [next.jdbc :as jdbc])
   (:import (edu.harvard.hms.dbmi.avillach.hpds.etl.phenotype SequentialLoader)
            (edu.harvard.hms.dbmi.avillach.hpds.crypto Crypto)))
@@ -82,8 +83,29 @@
         encrypt-file-path (get-in input-opts [:opts :encryption-file])]
     (log/info (format "Source irdb: %s" src-irdb-path))
     (log/info (format "Target javabin directory: %s" target-dir-path))
-    (log/info (format "Encryption File: %s" encrypt-file-path))
+    (log/info (format "Encryption file: %s" encrypt-file-path))
     (setup-output-store-directory target-dir-path encrypt-file-path)
     (create-javabins target-dir-path src-irdb-path)
     (log/info "All Done!")
     (prn input-opts)))
+
+(comment
+  (def test-root-dir "/Users/idas/git/i2/pic-sure-extras")
+  (def test-irdb (s/join "/" [test-root-dir "data/duckdb/test-merge.duckdb"]))
+  (def test-target-dir (s/join "/" [test-root-dir "data/test-javabin"]))
+  (def test-encrypt-file (s/join "/" [test-root-dir "data/encryption_key"]))
+  (def test-sql "select concept_path as concept, cube from pheno_cubes order by concept_path LIMIT 1")
+  (def record (with-open [conn (u/duckdb-connect-ro test-irdb)]
+                 (let [ds-opts (jdbc/with-options conn {:builderfn u/sqlite-blob-builder})
+                       row (jdbc/execute-one! ds-opts [test-sql])]
+                   row)))
+  (:concept record)
+  (.getBytes (:cube record))
+  (with-open [conn (u/duckdb-connect-ro test-irdb)]
+    (let [ds-opts (jdbc/with-options conn {:builderfn u/sqlite-blob-builder})
+          row (jdbc/execute-one! ds-opts [test-sql])
+          raw-cube (:cube row)
+          size (.length raw-cube)
+          buffit (byte-array size)]
+      (.read (.getBinaryStream raw-cube) buffit 0 size)
+      (u/deserialize buffit))))
