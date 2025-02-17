@@ -55,7 +55,7 @@
         (.getLoadingStore)
         (.loadingCache)
         (.put concept pheno-cube))
-    (log/info (format "[ %d | %d ] Finished loading concept %s" i total concept))))
+    (log/info (format "[ %d | %d ] Finished loading concept: %s" i total concept))))
 
 (defn load-cubes-from-irdb [loader irdb-path]
   (with-open [conn (u/duckdb-connect-ro irdb-path)]
