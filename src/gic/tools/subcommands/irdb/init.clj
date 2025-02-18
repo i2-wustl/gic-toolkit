@@ -6,9 +6,10 @@
 
 (defn init-irdb! [db-path]
   (with-open [conn (u/duckdb-connect-rw db-path)]
-    (let [create-cube-sql (slurp (io/resource "sql/irdb/init/create-cubes-table.sql"))
+    (let [create-seq-sql (slurp (io/resource "sql/irdb/init/create-pheno-cubes-sequence.sql"))
+          create-cube-sql (slurp (io/resource "sql/irdb/init/create-pheno-cubes-table.sql"))
           create-allids-sql (slurp (io/resource "sql/irdb/init/create-allids-table.sql"))]
-      (run! #(jdbc/execute! conn [%]) (list create-cube-sql create-allids-sql)))))
+      (run! #(jdbc/execute! conn [%]) (list create-seq-sql create-cube-sql create-allids-sql)))))
 
 (defn run [input-opts]
   (let [db-path (get-in input-opts [:opts :dbpath])]

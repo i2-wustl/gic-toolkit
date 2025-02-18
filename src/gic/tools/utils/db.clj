@@ -39,6 +39,12 @@
 
 (def sqlite-blob-builder (rs/as-maps-adapter rs/as-unqualified-lower-maps sqlite-blob-reader))
 
+(defn serialize [obj]
+  (let [buff (java.io.ByteArrayOutputStream.)]
+    (with-open [dos (java.io.ObjectOutputStream. buff)]
+      (.writeObject dos obj))
+    (.toByteArray buff)))
+
 (defn deserialize [buf]
   (with-open [dis (-> buf java.io.ByteArrayInputStream. java.io.ObjectInputStream.)]
      (.readObject dis)))

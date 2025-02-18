@@ -6,6 +6,7 @@
             [clojure.string :as s]
             [next.jdbc :as jdbc])
   (:import (edu.harvard.hms.dbmi.avillach.hpds.etl.phenotype SequentialLoader)
+           (edu.harvard.hms.dbmi.avillach.hpds.data.phenotype PhenoCube)
            (edu.harvard.hms.dbmi.avillach.hpds.crypto Crypto)))
 
 (defn load-encryption-key [keyfile]
@@ -45,12 +46,23 @@
       .getLoadingStore
       .dumpStats))
 
-(defn load-cube [total loader [i row-record]]
+(defn create-pheno-cube [row-record]
   (let [concept (:concept row-record)
-        pheno-cube (u/duckdb-blob->object (:cube row-record))
-        observations (vec (.sortedByKey pheno-cube))]
-    (log/info (format "[ %d | %d ] Loading concept: %s" i total concept))
-    (.setLoadingMap pheno-cube observations)
+        alpha?  (:is_alpha row-record)
+        class-type (if alpha? (class "a") (class 1.0))
+        loading-map (u/duckdb-blob->object (:loading_map row-record))
+        column-width (:column_width row-record)]
+   (doto (PhenoCube. concept class-type)
+     (.setColumnWidth column-width)
+     (.setLoadingMap loading-map))))
+
+(defn load-cube [total loader [i row-record]]
+  (let [concept (:concept row-record)]
+   (log/info (format "[ %d | %d ] Loading concept: %s" i total concept)))
+  (let [pheno-cube (create-pheno-cube row-record)
+        concept (.name pheno-cube)
+        observations-count (count (.getLoadingMap pheno-cube))]
+    (log/info (format "    Observations count: %d" observations-count))
     (-> loader
         (.getLoadingStore)
         (.loadingCache)
@@ -60,7 +72,14 @@
 (defn load-cubes-from-irdb [loader irdb-path]
   (with-open [conn (u/duckdb-connect-ro irdb-path)]
     (let [total (:total (jdbc/execute-one! conn ["select count(*) as total from pheno_cubes"]))
-          sql "select concept_path as concept, cube from pheno_cubes order by concept_path"
+          sql (s/trim "
+                 select concept_path as concept,
+                        is_alpha,
+                        column_width,
+                        loading_map
+                 from pheno_cubes
+                 order by concept_path
+               ")
           counter (atom 1)]
         (run! #(do (->> (vector @counter %)
                         (load-cube total loader))
@@ -91,7 +110,8 @@
 
 (comment
   (def test-root-dir "/Users/idas/git/i2/pic-sure-extras")
-  (def test-irdb (s/join "/" [test-root-dir "data/duckdb/test-merge.duckdb"]))
+;  (def test-irdb (s/join "/" [test-root-dir "data/duckdb/test-merge.duckdb"]))
+  (def test-irdb (s/join "/" [test-root-dir "data/duckdb/test-irdb.duckdb"]))
   (def test-target-dir (s/join "/" [test-root-dir "data/test-javabin"]))
   (def test-encrypt-file (s/join "/" [test-root-dir "data/encryption_key"]))
   (def test-sql "select concept_path as concept, cube from pheno_cubes order by concept_path LIMIT 1")
@@ -101,11 +121,20 @@
                    row)))
   (:concept record)
   (.getBytes (:cube record))
-  (with-open [conn (u/duckdb-connect-ro test-irdb)]
-    (let [ds-opts (jdbc/with-options conn {:builderfn u/sqlite-blob-builder})
-          row (jdbc/execute-one! ds-opts [test-sql])
-          raw-cube (:cube row)
-          size (.length raw-cube)
-          buffit (byte-array size)]
-      (.read (.getBinaryStream raw-cube) buffit 0 size)
-      (u/deserialize buffit))))
+
+  (def test-cube
+    (with-open [conn (u/duckdb-connect-ro test-irdb)]
+      (let [ds-opts (jdbc/with-options conn {:builderfn u/sqlite-blob-builder})
+            row (jdbc/execute-one! ds-opts [test-sql])
+            raw-cube (:cube row)
+            size (.length raw-cube)
+            buffit (byte-array size)]
+        (.read (.getBinaryStream raw-cube) buffit 0 size)
+        (u/deserialize buffit))))
+
+;  (bean test-cube)
+;  (.getLoadingMap test-cube)
+  (count (vec test-cube))
+  (get (vec test-cube) 0)
+  
+  (.getColumnWidth test-cube))

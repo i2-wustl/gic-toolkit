@@ -88,11 +88,24 @@
 (defn insert-cube-into-irdb! [irdb-path pheno-cube]
   (with-open [conn (u/duckdb-connect-rw irdb-path)]
     (let [concept (.name pheno-cube)
-          sql (str "insert into pheno_cubes (concept_path, cube) values (?, ?) "
-                   "on conflict do update set cube = excluded.cube")]
+          sql (s/trim "
+                 insert into pheno_cubes
+                   (concept_path, is_alpha, observation_count, column_width, loading_map)
+                 values (?, ?, ?, ?, ?)
+                 on conflict do update set
+                   is_alpha = excluded.is_alpha,
+                   observation_count = excluded.observation_count,
+                   column_width = excluded.column_width,
+                   loading_map = excluded.loading_map
+               ")
+          loading-map (.getLoadingMap pheno-cube)
+          obs-count (count loading-map)
+          col-width (.getColumnWidth pheno-cube)
+          alpha? (.isAlpha pheno-cube)
+          blob (u/serialize loading-map)]
       (comment log/info (format "irdb-path: %s" irdb-path))
       (comment log/info (format "insert SQL: %s" sql))
-      (jdbc/execute-one! conn [sql concept ^PhenoCube pheno-cube]))))
+      (jdbc/execute-one! conn [sql concept alpha? obs-count col-width blob]))))
 
 (defn collect-patient-id [row-record]
   (swap! all-patient-ids conj (:PATIENT_NUM row-record)))
