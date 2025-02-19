@@ -85,12 +85,23 @@
                         (load-cube total loader))
                    (swap! counter inc)) (jdbc/plan conn [sql])))))
 
+(defn load-patient-ids-from-irdb [loader irdb-path]
+  (with-open [conn (u/duckdb-connect-ro irdb-path)]
+   (let [store (.getLoadingStore loader)
+         all-ids (.allIds store)
+         sql "select patient_id from allids order by patient_id"
+         patient-ids (jdbc/execute! conn [sql])]
+     (run! #(->> (:patient_id %)
+                 (.add all-ids)) patient-ids))))
+
 (defn create-javabins [target-dir irdb-path]
   (let [loader (SequentialLoader. target-dir 1000000)
         local-encrypt-file (format "%s/encryption_key" target-dir)]
     (load-encryption-key local-encrypt-file)
     (log/info "Loading concept cubes from irdb")
     (load-cubes-from-irdb loader irdb-path)
+    (log/info "Adding patient ids from irdb")
+    (load-patient-ids-from-irdb loader irdb-path)
     (log/info "Saving the new store")
     (save-store loader)
     (log/info "Dumping store stats")
@@ -137,4 +148,10 @@
   (count (vec test-cube))
   (get (vec test-cube) 0)
   
-  (.getColumnWidth test-cube))
+  (.getColumnWidth test-cube)
+
+  (with-open [conn (u/duckdb-connect-ro test-irdb)]
+   (let [sql "select patient_id from allids order by patient_id"
+         patient-ids (jdbc/plan conn [sql])]
+     (run! #(-> (:patient_id %)
+                (prn)) patient-ids))))
