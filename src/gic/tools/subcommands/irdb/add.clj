@@ -158,7 +158,9 @@
      (spit tmp-file-name all-ids)
      (log/info "\tUpdating allids table with new patients ids in temp csv file")
      (with-open [conn (u/duckdb-connect-rw irdb-path)]
-       (run! #(jdbc/execute-one! conn [%]) [sql-1 sql-2 sql-3]))))
+       (run! #(jdbc/execute-one! conn [%]) [sql-1 sql-2 sql-3]))
+     (log/info "\tDeleting temp csv file")
+     (.delete tmp-file)))
 
 (defn process-concept! [concept parquet-path irdb-path]
   (let [pheno-cube (generate-pheno-cube concept parquet-path irdb-path)
