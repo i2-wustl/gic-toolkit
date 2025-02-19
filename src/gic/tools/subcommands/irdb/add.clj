@@ -80,8 +80,8 @@
 
 (defn add-record-into-pheno-cube! [pheno-cube [i row-record]]
   (let [pheno-input (create-pheno-input row-record)
-        interval 100000]
-    (when (= (mod i interval) 0)
+        display-update-interval 100000]
+    (when (= (mod i display-update-interval) 0)
       (log/info (format "    # records processed: %d" i)))
     (.addPhenoInput pheno-cube pheno-input)))
 
