@@ -128,7 +128,7 @@
                                 :alias :l
                                 :require false
                                 :validate {:pred #(-> % utils/file-exists?)
-                                           :ex-msg #(format "[err] could not find on file system: %s" (:value %))}}} 
+                                           :ex-msg #(format "[err] could not find on file system: %s" (:value %))}}}
          :dispatch (fn [opts]
                      (let [full-opts (assoc opts :subcommand :add :command :irdb)]
                         (when (show-help? full-opts)
