@@ -238,7 +238,7 @@
   (def test-concept-record (peek-concept-record test-concept test-input-parquet))
   (def test-pheno-input (create-pheno-input test-concept-record))
   (bean test-pheno-input)
-  (def test-pheno-cube (generate-pheno-cube test-concept test-input-parquet))
+  (def test-pheno-cube (generate-pheno-cube test-concept test-input-parquet test-input-irdb))
   (bean test-pheno-cube)
   (.name test-pheno-cube)
   (import-concept-data! test-concept test-input-parquet test-input-irdb)
