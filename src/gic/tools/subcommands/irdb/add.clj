@@ -71,12 +71,47 @@
      (.setNumericValue nval-num-str)
      (.setDateTime timestamp))))
 
-(defn create-pheno-cube [concept parquet-path]
+(defn concept-already-in-irdb? [sanitized-concept irdb-path]
+  (with-open [conn (u/duckdb-connect-ro irdb-path)]
+    (let [sql "select 1 as exists from pheno_cubes where concept_path = ?"
+          in-irdb? (:exists (jdbc/execute-one! conn [sql sanitized-concept]))]
+      (if in-irdb? true false))))
+
+(defn resurrect-pheno-cube [sanitized-concept irdb-path]
+  (with-open [conn (u/duckdb-connect-ro irdb-path)]
+   (let [sql (s/trim "
+               select concept_path as concept,
+                      is_alpha,
+                      column_width,
+                      loading_map
+               from   pheno_cubes
+               where  concept_path = ?
+             ")
+         row (jdbc/execute-one! conn [sql sanitized-concept])
+         concept (:concept row)
+         alpha?  (:is_alpha row)
+         class-type (if alpha? (class "a") (class 1.0))
+         loading-map (u/duckdb-blob->object (:loading_map row))
+         column-width (:column_width row)]
+    (log/info (format "    Resurrecting existing pheno cube: %s" concept))
+    (doto (PhenoCube. concept class-type)
+       (.setColumnWidth column-width)
+       (.setLoadingMap loading-map)))))
+
+(defn create-new-pheno-cube [pheno-input]
+  (let [sanitized-concept (.sanitizeConceptPath pheno-input)
+        class-type (if (.isAlpha pheno-input) (class "") (class 1.0))]
+    (log/info "    Creating new pheno cube")
+    (PhenoCube. sanitized-concept class-type)))
+
+(defn generate-pheno-cube [concept parquet-path irdb-path]
   (let [sample-record (peek-concept-record concept parquet-path)
         pheno-input   (create-pheno-input sample-record)
-        class-type    (if (.isAlpha pheno-input) (class "") (class 1.0))
-        sanitized-concept (.sanitizeConceptPath pheno-input)]
-    (PhenoCube. sanitized-concept class-type)))
+        sanitized-concept (.sanitizeConceptPath pheno-input)
+        in-irdb? (concept-already-in-irdb? sanitized-concept irdb-path)]
+    (if in-irdb?
+      (resurrect-pheno-cube sanitized-concept irdb-path)
+      (create-new-pheno-cube pheno-input))))
 
 (defn add-record-into-pheno-cube! [pheno-cube [i row-record]]
   (let [pheno-input (create-pheno-input row-record)
@@ -126,7 +161,7 @@
        (run! #(jdbc/execute-one! conn [%]) [sql-1 sql-2 sql-3]))))
 
 (defn process-concept! [concept parquet-path irdb-path]
-  (let [pheno-cube (create-pheno-cube concept parquet-path)
+  (let [pheno-cube (generate-pheno-cube concept parquet-path irdb-path)
         sql-template (str "select * "
                           "from read_parquet('%s') "
                           "where concept_path = ? "
@@ -201,7 +236,7 @@
   (def test-concept-record (peek-concept-record test-concept test-input-parquet))
   (def test-pheno-input (create-pheno-input test-concept-record))
   (bean test-pheno-input)
-  (def test-pheno-cube (create-pheno-cube test-concept test-input-parquet))
+  (def test-pheno-cube (generate-pheno-cube test-concept test-input-parquet))
   (bean test-pheno-cube)
   (.name test-pheno-cube)
   (import-concept-data! test-concept test-input-parquet test-input-irdb)
