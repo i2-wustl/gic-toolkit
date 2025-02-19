@@ -125,9 +125,10 @@
     (let [concept (.name pheno-cube)
           sql (s/trim "
                  insert into pheno_cubes
-                   (concept_path, is_alpha, observation_count, column_width, loading_map)
-                 values (?, ?, ?, ?, ?)
+                   (concept_path, partition, is_alpha, observation_count, column_width, loading_map)
+                 values (?, ?, ?, ?, ?, ?)
                  on conflict do update set
+                   partition = excluded.partition,
                    is_alpha = excluded.is_alpha,
                    observation_count = excluded.observation_count,
                    column_width = excluded.column_width,
@@ -137,10 +138,11 @@
           obs-count (count loading-map)
           col-width (.getColumnWidth pheno-cube)
           alpha? (.isAlpha pheno-cube)
-          blob (u/serialize loading-map)]
+          blob (u/serialize loading-map)
+          partition-val 0]
       (comment log/info (format "irdb-path: %s" irdb-path))
       (comment log/info (format "insert SQL: %s" sql))
-      (jdbc/execute-one! conn [sql concept alpha? obs-count col-width blob]))))
+      (jdbc/execute-one! conn [sql concept partition-val alpha? obs-count col-width blob]))))
 
 (defn collect-patient-id [row-record]
   (swap! all-patient-ids conj (:PATIENT_NUM row-record)))

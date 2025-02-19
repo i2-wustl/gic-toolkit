@@ -20,11 +20,12 @@
 (defn merge-irdb [main-irdb minor-irdb]
   (let [sql-1 (format "ATTACH '%s' as child (READ_ONLY)" minor-irdb)
         sql-2 (str "INSERT INTO pheno_cubes "
-                   "(concept_path, is_alpha, observation_count, column_width, loading_map) "
-                   "SELECT concept_path, is_alpha, observation_count, column_width, loading_map "
+                   "(concept_path, partition, is_alpha, observation_count, column_width, loading_map) "
+                   "SELECT concept_path, partition, is_alpha, observation_count, column_width, loading_map "
                    "from child.pheno_cubes "
                    "ON CONFLICT (concept_path) "
                    "DO UPDATE SET "
+                   "partition = EXCLUDED.partition, "
                    "is_alpha = EXCLUDED.is_alpha, "
                    "observation_count = EXCLUDED.observation_count, "
                    "column_width = EXCLUDED.column_width, "
