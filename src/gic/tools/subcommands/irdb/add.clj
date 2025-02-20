@@ -168,8 +168,7 @@
   (let [pheno-cube (generate-pheno-cube concept parquet-path irdb-path)
         sql-template (str "select * "
                           "from read_parquet('%s') "
-                          "where concept_path = ? "
-                          "LIMIT 2")
+                          "where concept_path = ?")
         sql (format sql-template parquet-path)
         counter (atom 1)]
     (with-open [conn (u/duckdb-connect-rw "")]
