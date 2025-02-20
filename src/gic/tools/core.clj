@@ -1,7 +1,8 @@
 (ns gic.tools.core
   (:require [babashka.cli :as cli]
             [clojure.string :as str]
-            [gic.tools.subcommands.irdb.cli :as i]))
+            [gic.tools.subcommands.irdb.cli :as i])
+  (:gen-class))
 
 (def version-number "0.0.1")
 
