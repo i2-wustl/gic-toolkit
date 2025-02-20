@@ -21,7 +21,8 @@
                               "-i"]}
            :cli {:jvm-opts ["-Xmx6g"]
                  :main-opts ["-m" "gic.tools.core"]}
-           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.7" :git/sha "573711e"}}
+           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.7" :git/sha "573711e"}
+                          com.github.ericdallo/deps-bin {:mvn/version "RELEASE"}}
                    :ns-default build}}}
 
 ;         techascent/tech.ml.dataset {:mvn/version "7.021"}
