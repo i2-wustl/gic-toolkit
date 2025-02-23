@@ -136,7 +136,7 @@
                           (print-subcommand-help (:subcommand full-opts)))
                         (a/run full-opts)))}
    :merge {:spec {:main-irdb {:ref "/path/to/main-irdb.db"
-                              :desc "The maininput irdb database to merge cubes into [required]"
+                              :desc "The main input irdb database to merge cubes into [required]"
                               :alias :m
                               :require true
                               :validate {:pred #(-> % utils/file-exists?)
