@@ -168,8 +168,8 @@
                           (print-subcommand-help (:subcommand full-opts)))
                         (d/run full-opts)))}
    :inspect {:spec {:irdb {:ref "/path/to/irdb.db"
-                           :desc "The target irdb database to add data into [required]"
-                           :alias :o
+                           :desc "The irdb database to inspect [required]"
+                           :alias :i
                            :require true
                            :validate {:pred #(-> % utils/file-exists?)
                                       :ex-msg #(format "[err] could not find on file system: %s" (:value %))}}
@@ -185,11 +185,21 @@
                                     :require false
                                     :validate {:pred #(-> % utils/file-exists?)
                                                :ex-msg #(format "[err] could not find on file system: %s" (:value %))}}
+
                     :show-data  {:coerce :boolean
                                  :desc "Display the raw observation data"
                                  :default false}
+
                     :display-concepts {:coerce :boolean
-                                       :desc "Display the list of concepts paths in the irdb"}}
+                                       :desc "Display the list of concepts paths in the irdb"
+                                       :default false}
+
+                    :limit {:ref "INTEGER"
+                            :coerce :int
+                            :desc "limit the number of observations to show when displaying raw observation data"
+                            :default nil
+                            :validate {:pred pos?
+                                       :ex-msg #(format "[err] Not a positive nonzero number: %s" (str (:value %)))}}}
              :dispatch (fn [opts]
                          (let [full-opts (assoc opts :subcommand :inspect :command :irdb)]
                             (when (show-help? full-opts)
