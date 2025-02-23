@@ -5,7 +5,8 @@
             [gic.tools.subcommands.irdb.init :as i]
             [gic.tools.subcommands.irdb.add :as a]
             [gic.tools.subcommands.irdb.merge :as m]
-            [gic.tools.subcommands.irdb.dump :as d]))
+            [gic.tools.subcommands.irdb.dump :as d]
+            [gic.tools.subcommands.irdb.inspect :as in]))
 
 (declare subcommands)
 (declare global-options)
@@ -166,6 +167,34 @@
                         (when (show-help? full-opts)
                           (print-subcommand-help (:subcommand full-opts)))
                         (d/run full-opts)))}
+   :inspect {:spec {:irdb {:ref "/path/to/irdb.db"
+                           :desc "The target irdb database to add data into [required]"
+                           :alias :o
+                           :require true
+                           :validate {:pred #(-> % utils/file-exists?)
+                                      :ex-msg #(format "[err] could not find on file system: %s" (:value %))}}
+
+                    :concept {:ref "\\concept\\path"
+                              :desc "A specific concept path to add into the irdb from the input parquet data source"
+                              :alias :c
+                              :require false}
+
+                    :concepts-list {:ref "/path/to/concepts.list"
+                                    :desc "A list of concept paths to add into the irdb from the input parquet data source (one concept per line)"
+                                    :alias :l
+                                    :require false
+                                    :validate {:pred #(-> % utils/file-exists?)
+                                               :ex-msg #(format "[err] could not find on file system: %s" (:value %))}}
+                    :show-data  {:coerce :boolean
+                                 :desc "Display the raw observation data"
+                                 :default false}
+                    :display-concepts {:coerce :boolean
+                                       :desc "Display the list of concepts paths in the irdb"}}
+             :dispatch (fn [opts]
+                         (let [full-opts (assoc opts :subcommand :inspect :command :irdb)]
+                            (when (show-help? full-opts)
+                              (print-subcommand-help (:subcommand full-opts)))
+                            (in/run full-opts)))}
    :help {:spec {}
           :dispatch #'help}})
 
@@ -179,10 +208,11 @@
   (System/exit 1))
 
 (def dispatch-table
- [{:cmds ["init"]  :fn (get-dispatch-fn "init")  :spec (get-full-spec "init")  :error-fn error-fn}
-  {:cmds ["add"]   :fn (get-dispatch-fn "add")   :spec (get-full-spec "add")   :error-fn error-fn}
-  {:cmds ["merge"] :fn (get-dispatch-fn "merge") :spec (get-full-spec "merge") :error-fn error-fn}
-  {:cmds ["dump"]  :fn (get-dispatch-fn "dump")  :spec (get-full-spec "dump")  :error-fn error-fn}
+ [{:cmds ["init"]     :fn (get-dispatch-fn "init")     :spec (get-full-spec "init")     :error-fn error-fn}
+  {:cmds ["add"]      :fn (get-dispatch-fn "add")      :spec (get-full-spec "add")      :error-fn error-fn}
+  {:cmds ["merge"]    :fn (get-dispatch-fn "merge")    :spec (get-full-spec "merge")    :error-fn error-fn}
+  {:cmds ["dump"]     :fn (get-dispatch-fn "dump")     :spec (get-full-spec "dump")     :error-fn error-fn}
+  {:cmds ["inspect"]  :fn (get-dispatch-fn "inspect")  :spec (get-full-spec "inspect")  :error-fn error-fn}
   {:cmds ["help"]  :fn help}
   {:cmds [] :fn help}])
 
