@@ -141,6 +141,7 @@
                               :require true
                               :validate {:pred #(-> % utils/file-exists?)
                                          :ex-msg #(format "[err] could not find on file system: %s" (:value %))}}} 
+
            :dispatch (fn [opts]
                        (let [full-opts (assoc opts :subcommand :merge :command :irdb)]
                         (when (show-help? full-opts)
