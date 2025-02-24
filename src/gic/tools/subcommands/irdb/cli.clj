@@ -47,6 +47,7 @@
        add      add or update concept data to an existing irdb
        merge    merge multiple target irdbs into a source irdb
        dump     generate a javabin file from an irdb
+       inspect  inspect an irdb's contents
        help     this help message
 
      Try:
