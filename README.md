@@ -215,7 +215,7 @@ ISC
 [2]: https://github.com/i2-wustl/gic-toolkit/releases
 [3]: https://duckdb.org
 [4]: https://github.com/i2-wustl/pic-sure-hpds/tree/wustl-phenotype-etl-adjustments
-[5]: https://github.com/i2-wustl/pic-sure-hpds/blob/main/scripts/build-pic-sure.sh
+[5]: https://github.com/i2-wustl/gic-toolkit/blob/main/scripts/build-pic-sure.sh
 [6]: https://clojure.org
 [7]: https://clojure.org/guides/install_clojure
 [8]: https://dbmi.hms.harvard.edu
