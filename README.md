@@ -4,7 +4,9 @@ This is some extra tooling for the [PIC-SURE][0] ecosystem being used by the [Ge
 
 ## Caveat Emptor
 
-_Please note this is considered **alpha software**. This repository is very much a work in progress. It's realized vision is still unclear. The goal is to make certain aspects of PIC-SURE maintenance and administration easier. Lots of breaking changes to come. It's currently unaffiliated with [hms-dbmi][8], the primary drivers of PIC-SURE and GIC._
+_Please note this is considered **alpha software**._
+
+_This repository is very much a work in progress. It's realized vision is still unclear. The goal is to make certain aspects of PIC-SURE maintenance and administration easier. Lots of breaking changes to come. It's currently unaffiliated with [hms-dbmi][8], the primary drivers of PIC-SURE and GIC._
 
 ## Quick Start
 
@@ -19,10 +21,10 @@ gic-tk
 or
 
 ```bash
-java =jar gic-tools-0.1.51-standalone.jar
+java -jar gic-tools-0.1.51-standalone.jar
 ```
 
-By default it will show you the available commands to invoke.  You should see something like so:
+The above commands will show you the available subcommands to invoke.  You should see something like so:
 
 ```
 Usage: gic-tk <subcommand> <options>
@@ -47,7 +49,7 @@ Usage: gic-tk <subcommand> <options>
 
 ## Architecture
 
-`gic-tk` is designed as a command-line application that consists of various subcommands to deal with various aspects of PIC-SURE maintenance and administration.  Currnently, there's one subcommand `irdb` _(see below)_.
+`gic-tk` is designed as a command-line application that consists of various subcommands to deal with various aspects of PIC-SURE maintenance and administration.  Currently, there's one subcommand `irdb` _(see below)_.
 
 ## Usage
 
@@ -63,6 +65,7 @@ Create an empty IRDB file.
 
 ```
 $ gic-tk irdb help init
+
 Usage: gic-tk irdb init <options> <arguments>
 Options:
       --debug                   false Enable additional debug logging
@@ -75,6 +78,7 @@ Add phenotypic/EHR data to an existing IRDB file.
 
 ```
 $ gic-tk irdb help add
+
 Usage: gic-tk irdb add <options> <arguments>
 Options:
       --debug                                false  Enable additional debug logging
@@ -93,6 +97,7 @@ Merge multiple IRDB's into a single IRDB.
 
 ```
 $ gic-tk irdb help merge
+
 Usage: gic-tk irdb merge <options> /path/to/irdb1.db /path/to/irdb2.db ...
 Options:
       --debug                           false Enable additional debug logging
@@ -107,6 +112,7 @@ Dump javabin files from a given input IRDB.
 
 ```
 $ gic-tk irdb help dump
+
 Usage: gic-tk irdb dump <options> <arguments>
 Options:
       --debug                                   false Enable additional debug logging
@@ -152,13 +158,16 @@ gic-tk irdb merge --main-irdb age-race-merged.duckdb age.duckdb race.duckdb
 mkdir -p javabin-out
 gic-tk irdb dump -i age-race-merged.duckdb -t javabin-out -e encryption_key
 
-# inspect the overall summary contents of the merged irdb database
+# view the overall summary contents of the merged irdb database
 gic-tk irdb inspect --irdb age-race-merged.duckdb
 
-# inspect the summary contents for just a single age concept
+# view the summary contents for just a single concept
 gic-tk irdb inspect -i age-race-merged.duckdb -c '\ACT Demographics\Age\'
 
-# view the first 10 observation records for a specific age concept
+# view the first 10 observation records for a specific concept
+gic-tk irdb inspect -i age-race-merged.duckdb -c '\ACT Demographics\Age\' --show-data --limit 10
+
+# view all the observation records for a specific concept
 gic-tk irdb inspect -i age-race-merged.duckdb -c '\ACT Demographics\Age\' --show-data --limit 10
 
 # view all the concept paths currently in the irdb database
