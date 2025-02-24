@@ -129,7 +129,13 @@
                                 :alias :l
                                 :require false
                                 :validate {:pred #(-> % utils/file-exists?)
-                                           :ex-msg #(format "[err] could not find on file system: %s" (:value %))}}}
+                                           :ex-msg #(format "[err] could not find on file system: %s" (:value %))}}
+                :interval {:ref "INTEGER"
+                           :coerce :int
+                           :desc "The interval to display record processing updates"
+                           :default 100000
+                           :validate {:pred pos?
+                                       :ex-msg #(format "[err] Not a positive nonzero number: %s" (str (:value %)))}}}
          :dispatch (fn [opts]
                      (let [full-opts (assoc opts :subcommand :add :command :irdb)]
                         (when (show-help? full-opts)

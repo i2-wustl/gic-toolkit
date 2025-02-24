@@ -6,6 +6,8 @@
   (:import (java.io File)
            (edu.harvard.hms.dbmi.avillach.hpds.data.phenotype PhenoCube PhenoInput)))
 
+(def display-update-interval (atom 100000))
+
 (def all-patient-ids (atom (sorted-set)))
 
 (defn get-concepts-from-list-path [input-path]
@@ -114,9 +116,8 @@
       (create-new-pheno-cube pheno-input))))
 
 (defn add-record-into-pheno-cube! [pheno-cube [i row-record]]
-  (let [pheno-input (create-pheno-input row-record)
-        display-update-interval 100000]
-    (when (= (mod i display-update-interval) 0)
+  (let [pheno-input (create-pheno-input row-record)]
+    (when (= (mod i @display-update-interval) 0)
       (log/info (format "    # records processed: %d" i)))
     (.addPhenoInput pheno-cube pheno-input)))
 
@@ -200,9 +201,12 @@
   (let [target-irdb-path (get-in input-opts [:opts :target-irdb])
         input-parquet (get-in input-opts [:opts :input-parquet])
         input-concept (get-in input-opts [:opts :concept])
+        interval (get-in input-opts [:opts :interval])
         concept-list-path (get-in input-opts [:opts :concepts-list])
         final-concepts (assemble-concepts input-concept concept-list-path input-parquet)]
     (log/info (format "Found %d concepts to process" (count final-concepts)))
+    (log/info (format "Setting progress interval to: %d" interval))
+    (reset! display-update-interval interval)
     (add-concepts-to-irdb! final-concepts target-irdb-path input-parquet)
     (log/info (format "Logging new patient ids into allIds table in irdb"))
     (add-patient-ids-to-irdb! target-irdb-path)
