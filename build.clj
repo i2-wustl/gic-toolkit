@@ -3,7 +3,8 @@
             [deps-bin.deps-bin :as bin]))
 
 (def lib 'gic-tools)
-(def version (format "0.1.%s" (b/git-count-revs nil)))
+;(def version (format "0.1.%s" (b/git-count-revs nil)))
+(def version "0.0.1")
 (def class-dir "target/classes")
 (def jar-file (format "target/%s-%s.jar" (name lib) version))
 (def uber-file (format "target/%s-%s-standalone.jar" (name lib) version))
