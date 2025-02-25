@@ -35,7 +35,7 @@ function build_pic_sure_hpds {
     log "Entering into build directory: ${BUILD_DIR}"
     pushd ${BUILD_DIR}
     log "Cloning indraniel/pic-sure-hpds"
-    git clone git@github.com:indraniel/pic-sure-hpds pic-sure-hpds
+    git clone git@github.com:i2-wustl/pic-sure-hpds pic-sure-hpds
     log "Entering into pic-sure-hpds git repository"
     cd pic-sure-hpds
     log "Entering into the 2025-loading-idea branch"
