@@ -6,7 +6,11 @@ This is some extra tooling for the [PIC-SURE][0] ecosystem being used by the [Ge
 
 _Please note this is considered **alpha software**._
 
-_This repository is very much a work in progress. It's realized vision is still unclear. The goal is to make certain aspects of PIC-SURE maintenance and administration easier. Lots of breaking changes to come. It's currently unaffiliated with [hms-dbmi][8], the primary drivers of PIC-SURE and GIC._
+_This repository is very much a work in progress. It's realized vision is still unclear. The goal is to make certain aspects of PIC-SURE maintenance and administration easier.
+
+The repository is a testing ground for exploring various ideas with possibly lots of breaking changes to come or abandonment. At worst case, it can serve as an example of what not to to :-) .
+
+The work is currently unaffiliated with [hms-dbmi][8], the primary drivers of PIC-SURE and GIC._
 
 ## Quick Start
 
