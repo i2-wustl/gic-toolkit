@@ -81,7 +81,7 @@
    (if (empty? (opts :args))
     (println default-help-string)
     (println (subcommand-help-string (opts :args)))))
-  (prn opts))
+  (comment prn opts))
 
 (defn print-subcommand-help [subcommand]
   (let [subcmd-help-string (subcommand-help-string [subcommand])]

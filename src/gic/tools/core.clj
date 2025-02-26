@@ -27,7 +27,7 @@
      help: this help message
      version: version number information
    "))
-  (prn opts))
+  (comment prn opts))
 
 (defn version [opts]
   (println (format "Version: %s" version-number)))

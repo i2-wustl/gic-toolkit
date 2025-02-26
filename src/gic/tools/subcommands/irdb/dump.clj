@@ -117,7 +117,7 @@
     (setup-output-store-directory target-dir-path encrypt-file-path)
     (create-javabins target-dir-path src-irdb-path)
     (log/info "All Done!")
-    (prn input-opts)))
+    (comment prn input-opts)))
 
 (comment
   (def test-root-dir "/Users/idas/git/i2/pic-sure-extras")
