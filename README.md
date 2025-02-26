@@ -25,7 +25,7 @@ gic-tk
 or
 
 ```bash
-java -jar gic-tools-0.1.51-standalone.jar
+java -jar gic-tools-0.0.1-standalone.jar
 ```
 
 The above commands will show you the available subcommands to invoke.  You should see something like so:
